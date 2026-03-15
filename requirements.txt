@@ -1,0 +1,16 @@
+torch
+torchvision
+open-clip-torch
+numpy
+opencv-python
+Pillow
+scikit-learn
+tqdm
+matplotlib
+seaborn
+pandas
+fastapi
+uvicorn
+python-multipart
+scipy
+statsmodels
