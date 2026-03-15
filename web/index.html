@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>DeepFake Detector</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<style>
+body {
+    margin: 0;
+    font-family: 'Segoe UI', sans-serif;
+    background: linear-gradient(135deg, #0f2027, #203a43, #2c5364);
+    color: white;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    min-height: 100vh;
+}
+
+h1 {
+    margin-top: 40px;
+    font-size: 40px;
+}
+
+.container {
+    display: flex;
+    gap: 50px;
+    margin-top: 40px;
+    background: rgba(255,255,255,0.05);
+    padding: 40px;
+    border-radius: 20px;
+    backdrop-filter: blur(15px);
+    box-shadow: 0 20px 40px rgba(0,0,0,0.4);
+}
+
+.upload-box {
+    width: 320px;
+    height: 320px;
+    border: 2px dashed rgba(255,255,255,0.5);
+    border-radius: 15px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: 0.3s;
+    text-align: center;
+    padding: 20px;
+}
+
+.upload-box:hover {
+    background: rgba(255,255,255,0.1);
+}
+
+input[type="file"] {
+    display: none;
+}
+
+img {
+    max-width: 100%;
+    max-height: 280px;
+    border-radius: 10px;
+    display: none;
+}
+
+.result-box {
+    width: 320px;
+    display: flex;
+    flex-direction: column;
+}
+
+.prediction {
+    font-size: 30px;
+    font-weight: bold;
+    margin-bottom: 20px;
+}
+
+.bar-container {
+    margin-bottom: 15px;
+}
+
+.label {
+    margin-bottom: 5px;
+    font-size: 15px;
+}
+
+.bar {
+    height: 20px;
+    background: rgba(255,255,255,0.2);
+    border-radius: 10px;
+    overflow: hidden;
+}
+
+.fill-real {
+    height: 100%;
+    width: 0%;
+    background: #00ff99;
+    transition: 0.6s;
+}
+
+.fill-fake {
+    height: 100%;
+    width: 0%;
+    background: #ff4b2b;
+    transition: 0.6s;
+}
+
+.fill-confidence {
+    height: 100%;
+    width: 0%;
+    background: #00ccff;
+    transition: 0.6s;
+}
+
+button {
+    margin-top: 20px;
+    padding: 12px;
+    border: none;
+    border-radius: 8px;
+    background: #00ccff;
+    color: black;
+    font-weight: bold;
+    cursor: pointer;
+}
+
+button:hover {
+    background: #00ffcc;
+}
+</style>
+</head>
+<body>
+
+<h1>DeepFake Detector</h1>
+
+<div class="container">
+
+<div class="upload-box" onclick="document.getElementById('fileInput').click();">
+    <div>
+        <p>Click to Upload Image</p>
+        <img id="preview">
+    </div>
+</div>
+
+<div class="result-box">
+
+    <div class="prediction" id="predictionText">
+        Awaiting Analysis...
+    </div>
+
+    <div class="bar-container">
+        <div class="label">REAL</div>
+        <div class="bar">
+            <div class="fill-real" id="realBar"></div>
+        </div>
+    </div>
+
+    <div class="bar-container">
+        <div class="label">FAKE</div>
+        <div class="bar">
+            <div class="fill-fake" id="fakeBar"></div>
+        </div>
+    </div>
+
+    <div class="bar-container">
+        <div class="label" id="confidenceLabel">Prediction Confidence</div>
+        <div class="bar">
+            <div class="fill-confidence" id="confidenceBar"></div>
+        </div>
+    </div>
+
+    <button onclick="predict()">Analyze</button>
+
+</div>
+
+</div>
+
+<input type="file" id="fileInput" accept="image/*" onchange="previewImage(event)">
+
+<script>
+
+let selectedFile = null;
+
+function previewImage(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    selectedFile = file;
+
+    const reader = new FileReader();
+    reader.onload = function(e) {
+        const img = document.getElementById('preview');
+        img.src = e.target.result;
+        img.style.display = "block";
+    }
+    reader.readAsDataURL(file);
+}
+
+async function predict() {
+    if (!selectedFile) {
+        alert("Please upload an image first.");
+        return;
+    }
+
+    const formData = new FormData();
+    formData.append("file", selectedFile);
+
+    const response = await fetch("/predict", {
+        method: "POST",
+        body: formData
+    });
+
+    const data = await response.json();
+
+    const fakeConfidence = data.confidence * 100;
+    const realConfidence = 100 - fakeConfidence;
+
+    document.getElementById("realBar").style.width = realConfidence + "%";
+    document.getElementById("fakeBar").style.width = fakeConfidence + "%";
+
+    const predictionText = document.getElementById("predictionText");
+    const confidenceBar = document.getElementById("confidenceBar");
+    const confidenceLabel = document.getElementById("confidenceLabel");
+
+    if (data.prediction === "REAL") {
+        predictionText.innerHTML = "<span style='color:#00ff99;'>REAL</span>";
+        confidenceBar.style.width = realConfidence + "%";
+        confidenceBar.style.background = "#00ff99";
+        confidenceLabel.innerText = "Real Confidence = " + realConfidence.toFixed(2) + "%";
+    } else {
+        predictionText.innerHTML = "<span style='color:#ff4b2b;'>FAKE</span>";
+        confidenceBar.style.width = fakeConfidence + "%";
+        confidenceBar.style.background = "#ff4b2b";
+        confidenceLabel.innerText = "Fake Confidence = " + fakeConfidence.toFixed(2) + "%";
+    }
+}
+
+</script>
+
+</body>
+</html>

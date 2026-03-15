@@ -1,0 +1,29 @@
+# Python virtual environment
+Lib/
+Scripts/
+pyvenv.cfg
+
+# Project folders
+implemenation3_deepfake/
+data/
+logs/
+# results/
+
+# Python cache
+__pycache__/
+*.pyc
+
+# # Models
+# *.pth
+# *.pt
+
+# Datasets
+datasets/
+
+# Logs
+logs/
+
+# Data files
+data/
+*.jpg
+*.png
